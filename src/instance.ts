@@ -380,7 +380,9 @@ export class D200Surface implements SurfaceInstance {
 	#applySmallWindowConfig(): void {
 		if (this.#smallWindowMode === SMALL_WINDOW_DISABLED) {
 			this.#device.setSmallWindowMode(SmallWindowMode.BACKGROUND)
-			this.#device.pauseKeepAlive()
+			// Keep talking to the device even with no clock shown: the firmware
+			// goes to sleep after about a minute without host traffic.
+			this.#device.resumeKeepAlive()
 		} else {
 			this.#device.setSmallWindowMode(this.#smallWindowMode)
 			this.#device.resumeKeepAlive()
@@ -392,8 +394,6 @@ export class D200Surface implements SurfaceInstance {
 	}
 
 	#resumeSmallWindowUpdates(): void {
-		if (this.#smallWindowMode !== SMALL_WINDOW_DISABLED) {
-			this.#device.resumeKeepAlive()
-		}
+		this.#device.resumeKeepAlive()
 	}
 }
