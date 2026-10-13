@@ -8,7 +8,8 @@ import { ICON_HEIGHT, ICON_WIDTH, SMALL_WINDOW_BG_HEIGHT, SMALL_WINDOW_BG_WIDTH 
  *   row 0: col 0  col 1  col 2  col 3  col 4
  *   row 1: col 0  col 1  col 2  col 3  col 4
  *   row 2: col 0  col 1  col 2  col 3  (small-window touch, 2 cells wide)
- *   row 3: [pg_L] enc1   enc2   enc3  [pg_R]
+ *   row 3: [pg_L] enc1   enc2   enc3  [pg_R]   <- knob turns (rotary actions)
+ *   row 4:        push1  push2  push3          <- knob pushes (virtual buttons)
  *
  * The device emits indices 0–12 for the standard grid buttons, 13 for the
  * small-window touch area, 15/16 for page buttons, and 17–19 for encoders.
@@ -34,13 +35,11 @@ interface VirtualControlDef {
 	row: number
 }
 
-const VIRTUAL_ENCODER_TURN_CONTROLS: ReadonlyArray<VirtualControlDef> = [
-	{ controlId: 'enc-1-left', col: 0, row: 4 },
-	{ controlId: 'enc-1-right', col: 1, row: 4 },
-	{ controlId: 'enc-2-left', col: 2, row: 4 },
-	{ controlId: 'enc-2-right', col: 3, row: 4 },
-	{ controlId: 'enc-3-left', col: 1, row: 5 },
-	{ controlId: 'enc-3-right', col: 2, row: 5 },
+/** Knob pushes get their own button, directly below each knob, so a knob's turn and push can be set up separately. */
+const VIRTUAL_ENCODER_PUSH_CONTROLS: ReadonlyArray<VirtualControlDef> = [
+	{ controlId: 'enc-1-push', col: 1, row: 4 },
+	{ controlId: 'enc-2-push', col: 2, row: 4 },
+	{ controlId: 'enc-3-push', col: 3, row: 4 },
 ]
 
 /**
@@ -98,9 +97,9 @@ export function positionFromControlId(controlId: string): { col: number; row: nu
 	return { col: entry.col, row: entry.row }
 }
 
-export function virtualTurnControlId(controlId: string, direction: 'left' | 'right'): string | null {
+export function encoderPushControlId(controlId: string): string | null {
 	if (controlId !== 'enc-1' && controlId !== 'enc-2' && controlId !== 'enc-3') return null
-	return `${controlId}-${direction}`
+	return `${controlId}-push`
 }
 
 /**
@@ -144,7 +143,7 @@ export function createSurfaceSchema(): SurfaceSchemaLayoutDefinition {
 			column: entry.col,
 		}
 	}
-	for (const entry of VIRTUAL_ENCODER_TURN_CONTROLS) {
+	for (const entry of VIRTUAL_ENCODER_PUSH_CONTROLS) {
 		layout.controls[entry.controlId] = {
 			row: entry.row,
 			column: entry.col,

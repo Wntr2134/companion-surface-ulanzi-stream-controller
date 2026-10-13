@@ -24,7 +24,7 @@ import {
 	LCD_BUTTON_POSITIONS,
 	controlIdFromIndex,
 	positionFromControlId,
-	virtualTurnControlId,
+	encoderPushControlId,
 } from './surface-schema.js'
 
 export class D200Surface implements SurfaceInstance {
@@ -75,13 +75,6 @@ export class D200Surface implements SurfaceInstance {
 		this.#device.on('log', (line) => this.#logger.info(line))
 	}
 
-	#pulseVirtualControl(controlId: string, direction: 'left' | 'right'): void {
-		const virtualId = virtualTurnControlId(controlId, direction)
-		if (!virtualId) return
-		this.#context.keyDownById(virtualId)
-		this.#context.keyUpById(virtualId)
-	}
-
 	async #handleInputEvent(event: { index: number; type: 'button' | 'encoder'; action: 'press' | 'release' | 'left' | 'right' }): Promise<void> {
 		const controlId = controlIdFromIndex(event.index)
 		if (!controlId) return
@@ -96,16 +89,12 @@ export class D200Surface implements SurfaceInstance {
 		this.#recordActivity()
 
 		if (event.type === 'encoder') {
-			if (event.action === 'left') {
-				this.#context.rotateLeftById(controlId)
-				this.#pulseVirtualControl(controlId, 'left')
-			}
-			else if (event.action === 'right') {
-				this.#context.rotateRightById(controlId)
-				this.#pulseVirtualControl(controlId, 'right')
-			}
-			else if (event.action === 'press') this.#context.keyDownById(controlId)
-			else if (event.action === 'release') this.#context.keyUpById(controlId)
+			// Turns go to the knob's own control; pushes go to its separate push button.
+			const pushId = encoderPushControlId(controlId) ?? controlId
+			if (event.action === 'left') this.#context.rotateLeftById(controlId)
+			else if (event.action === 'right') this.#context.rotateRightById(controlId)
+			else if (event.action === 'press') this.#context.keyDownById(pushId)
+			else if (event.action === 'release') this.#context.keyUpById(pushId)
 		} else if (controlId === 'page-left') {
 			if (event.action === 'press') this.#context.changePage(false)
 		} else if (controlId === 'page-right') {
